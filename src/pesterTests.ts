@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import * as convert from 'xml-js';
 import { spawn } from 'child_process';
@@ -9,6 +10,7 @@ import { Log } from 'vscode-test-adapter-util';
 
 export class PesterTestRunner {
 	private readonly watcher: vscode.FileSystemWatcher;
+	private readonly testOutputLocation: string;
 	private pesterTestSuite: TestSuiteInfo = {
 		type: 'suite',
 		id: 'root',
@@ -25,9 +27,9 @@ export class PesterTestRunner {
 	) {
 		this.log.info('Initializing Pester test runner.');
 
-		// Pull file path from settings
-		const testOutputLocation = new vscode.RelativePattern(this.workspace, 'TestExplorerResults.xml');
-		this.watcher = vscode.workspace.createFileSystemWatcher(testOutputLocation, false, false, false);
+		// TODO: Pull file path from settings
+		this.testOutputLocation = path.join(this.workspace.uri.fsPath, 'TestExplorerResults.xml');
+		this.watcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
 		this.watcher.onDidChange((e: vscode.Uri) => this.loadTestFile(e));
 	}
 
@@ -111,7 +113,13 @@ export class PesterTestRunner {
 			const lineNumber = arr[arr.length - 1];
 			const filePath = arr.slice(0, arr.length - 1).join('');
 	
-			vscode.commands.executeCommand("PowerShell.RunPesterTests", filePath, isDebug, null, lineNumber)
+			vscode.commands.executeCommand(
+				"PowerShell.RunPesterTests",
+				filePath,
+				isDebug,
+				null,
+				lineNumber,
+				this.testOutputLocation);
 		}
 	}
 
@@ -144,7 +152,7 @@ export class PesterTestRunner {
 			this.testStatesEmitter.fire(<TestEvent>{
 				type: searchNode.type,
 				test: searchNode.id,
-				// Update this with map
+				// TODO: Update this with map of NUnit -> Test Explorer state
 				state: xmlNode._attributes.result == "Failure" ? "failed" : "passed"
 			});
 		}

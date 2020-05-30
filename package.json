@@ -48,7 +48,8 @@
     "vscode": "^1.23.0"
   },
   "extensionDependencies": [
-    "hbenl.vscode-test-explorer"
+    "hbenl.vscode-test-explorer",
+    "ms-vscode.powershell-preview"
   ],
   "activationEvents": [
     "*"
