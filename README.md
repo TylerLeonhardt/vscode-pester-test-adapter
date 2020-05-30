@@ -1,6 +1,6 @@
-# Example Test Adapter for Visual Studio Code
+# Pester Test Adapter for Visual Studio Code
 
-This repository contains an example for implementing a `TestAdapter` extension that works with the
+This repository contains a [Pester](https://github.com/Pester/Pester) implementation of a `TestAdapter` extension that works with the
 [Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) extension.
 
 More documentation can be found in the [Test Adapter API repository](https://github.com/hbenl/vscode-test-adapter-api).
@@ -15,9 +15,7 @@ More documentation can be found in the [Test Adapter API repository](https://git
 
 You should now see a second VS Code window, the Extension Development Host.
 Open a folder in this window and click the "Test" icon in the Activity bar.
-Now you should see the fake example test suite in the side panel:
-
-![The fake example test suite](img/fake-tests.png)
+Now you should see the test suite in the side panel:
 
 ## Basic implementation
 

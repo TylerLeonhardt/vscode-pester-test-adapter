@@ -1,24 +1,26 @@
 {
-  "name": "vscode-example-test-adapter",
-  "displayName": "Example Test Explorer",
-  "description": "Run your Example tests in the Sidebar of Visual Studio Code",
+  "name": "vscode-pester-test-adapter",
+  "displayName": "Pester Test Explorer",
+  "description": "Run your Pester tests in the Sidebar of Visual Studio Code",
   "icon": "img/icon.png",
-  "author": "Holger Benl <hbenl@evandor.de>",
-  "publisher": "hbenl",
+  "author": "Tyler Leonhardt <tyleonha@microsoft.com>",
+  "publisher": "tylerleonhardt",
   "version": "0.0.1",
   "license": "MIT",
-  "homepage": "https://github.com/hbenl/vscode-example-test-adapter",
+  "homepage": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hbenl/vscode-example-test-adapter.git"
+    "url": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter.git"
   },
   "bugs": {
-    "url": "https://github.com/hbenl/vscode-example-test-adapter/issues"
+    "url": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter/issues"
   },
   "categories": [
     "Other"
   ],
   "keywords": [
+    "PowerShell",
+    "Pester",
     "test",
     "testing"
   ],
@@ -34,7 +36,8 @@
   "dependencies": {
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.7.0",
-    "vscode-test-adapter-util": "^0.7.0"
+    "vscode-test-adapter-util": "^0.7.0",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@types/vscode": "~1.23.0",
@@ -53,14 +56,14 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Example Test Explorer configuration",
+      "title": "Pester Test Explorer configuration",
       "properties": {
-        "exampleExplorer.logpanel": {
+        "pesterExplorer.logpanel": {
           "description": "write diagnotic logs to an output panel",
           "type": "boolean",
           "scope": "resource"
         },
-        "exampleExplorer.logfile": {
+        "pesterExplorer.logfile": {
           "description": "write diagnostic logs to the given file",
           "type": "string",
           "scope": "resource"
