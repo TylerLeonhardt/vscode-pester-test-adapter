@@ -37,6 +37,11 @@ export interface IPowerShellExeDetails {
     readonly exePath: string;
 }
 
+export interface IPowerShellAdditionalExePathSettings {
+    versionName: string;
+    exePath: string;
+}
+
 export function getPlatformDetails(): IPlatformDetails {
     let operatingSystem = OperatingSystem.Unknown;
 
@@ -73,6 +78,9 @@ export class PowerShellExeFinder {
     // The platform details descriptor for the platform we're on
     private readonly platformDetails: IPlatformDetails;
 
+    // Additional configured PowerShells
+    private readonly additionalPSExeSettings: Iterable<IPowerShellAdditionalExePathSettings>;
+
     private winPS: IPossiblePowerShellExe;
 
     private alternateBitnessWinPS: IPossiblePowerShellExe;
@@ -83,9 +91,11 @@ export class PowerShellExeFinder {
      * @param additionalPowerShellExes Additional PowerShell installations as configured in the settings.
      */
     constructor(
-        platformDetails?: IPlatformDetails) {
+        platformDetails?: IPlatformDetails,
+        additionalPowerShellExes?: Iterable<IPowerShellAdditionalExePathSettings>) {
 
         this.platformDetails = platformDetails || getPlatformDetails();
+        this.additionalPSExeSettings = additionalPowerShellExes || [];
     }
 
     /**
@@ -136,6 +146,14 @@ export class PowerShellExeFinder {
         for (const defaultPwsh of this.enumerateDefaultPowerShellInstallations()) {
             if (defaultPwsh && defaultPwsh.exists()) {
                 yield defaultPwsh;
+            }
+        }
+
+        // Also show any additionally configured PowerShells
+        // These may be duplicates of the default installations, but given a different name.
+        for (const additionalPwsh of this.enumerateAdditionalPowerShellInstallations()) {
+            if (additionalPwsh && additionalPwsh.exists()) {
+                yield additionalPwsh;
             }
         }
     }
@@ -195,6 +213,16 @@ export class PowerShellExeFinder {
                 yield this.findWinPS({ useAlternateBitness: true });
 
                 break;
+        }
+    }
+
+    /**
+     * Iterates through the configured additonal PowerShell executable locations,
+     * without checking for their existence.
+     */
+    private *enumerateAdditionalPowerShellInstallations(): Iterable<IPossiblePowerShellExe> {
+        for (const additionalPwshSetting of this.additionalPSExeSettings) {
+            yield new PossiblePowerShellExe(additionalPwshSetting.exePath, additionalPwshSetting.versionName);
         }
     }
 
