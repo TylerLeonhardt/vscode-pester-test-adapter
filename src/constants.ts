@@ -32,7 +32,7 @@ function Discover-Test
 function New-SuiteObject ($Block) { 
     [PSCustomObject]@{
         type = 'suite'
-        id = "$($Block.ScriptBlock.File):$($Block.ScriptBlock.StartPosition.StartLine)"
+        id = "$($Block.ScriptBlock.File);$($Block.ScriptBlock.StartPosition.StartLine)"
         label = $Block.Name
         children = [Collections.Generic.List[Object]]@()
     }
@@ -41,7 +41,7 @@ function New-SuiteObject ($Block) {
 function New-TestObject ($Test) { 
     [PSCustomObject]@{
         type = 'test'
-        id = "$($Test.ScriptBlock.File):$($Test.ScriptBlock.StartPosition.StartLine)"
+        id = "$($Test.ScriptBlock.File);$($Test.ScriptBlock.StartPosition.StartLine)"
         label = $Test.Name
     }
 }
@@ -76,7 +76,7 @@ foreach ($file in $found) {
     $fileSuite = [PSCustomObject]@{
         type = 'suite'
         id = $file.BlockContainer.Item.FullName
-        label = $file.BlockContainer.Item.FullName
+        label = $file.BlockContainer.Item.Name
         children = [Collections.Generic.List[Object]]@()
     }
     $testSuiteInfo.children.Add($fileSuite)

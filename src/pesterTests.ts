@@ -101,26 +101,35 @@ export class PesterTestRunner {
 	): void {
 		if (node.type === 'suite') {
 			testStatesEmitter.fire(<TestSuiteEvent>{ type: 'suite', suite: node.id, state: 'running' });
-	
-			for (const child of node.children) {
-				this.runNode(child, testStatesEmitter, isDebug);
-			}	
 		} else {
 			// node.type === 'test'
 			testStatesEmitter.fire(<TestEvent>{ type: 'test', test: node.id, state: 'running' });
-	
-			const arr = node.id.split(':');
-			const lineNumber = arr[arr.length - 1];
-			const filePath = arr.slice(0, arr.length - 1).join('');
-	
-			vscode.commands.executeCommand(
-				"PowerShell.RunPesterTests",
-				filePath,
-				isDebug,
-				null,
-				lineNumber,
-				this.testOutputLocation);
 		}
+
+		let filePath: string;
+		let lineNumber: string;
+		if (node.id === 'root') {
+			// Run all of the files in a workspace.
+			filePath = this.workspace.uri.fsPath;
+			lineNumber = "";
+		} else if (node.id.indexOf(';') !== -1) {
+			// Run a section of a file.
+			const arr = node.id.split(';');
+			filePath = arr.slice(0, arr.length - 1).join('');
+			lineNumber = arr[arr.length - 1];
+		} else {
+			// Run the whole file.
+			filePath = node.id;
+			lineNumber = "";
+		}
+
+		vscode.commands.executeCommand(
+			"PowerShell.RunPesterTests",
+			filePath,
+			isDebug,
+			null,
+			lineNumber,
+			this.testOutputLocation);
 	}
 
 	private loadTestFile(uri: vscode.Uri) {
@@ -138,12 +147,12 @@ export class PesterTestRunner {
 			for (const child of (searchNode as TestSuiteInfo).children) {
 				if (Array.isArray(xmlResults)) {
 					for (const xmlChild of xmlResults) {
-						if (child.label == xmlChild._attributes.description) {
+						if (child.id == xmlChild._attributes.description || child.label == xmlChild._attributes.description) {
 							this.emitNodeUpdate(child, xmlChild);
 						}
 					}
 				} else {
-					if (child.label == xmlResults._attributes.description) {
+					if (child.id == xmlResults._attributes.description || child.label == xmlResults._attributes.description) {
 						this.emitNodeUpdate(child, xmlResults);
 					}
 				}
