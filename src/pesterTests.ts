@@ -59,7 +59,9 @@ export class PesterTestRunner {
 				this.log.debug(`child process exited with code ${code}`);
 				this.pesterTestSuite = JSON.parse(strData) as TestSuiteInfo;
 
-				vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, 'TestExplorerResults.xml')).then((files: vscode.Uri[]) => {
+				const config = vscode.workspace.getConfiguration("pesterExplorer");
+				const relativePath = config.get<string>("testFilePath")!;
+				vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, relativePath)).then((files: vscode.Uri[]) => {
 					if (files.length > 1) {
 						throw new Error("More than one test file found.");
 					}

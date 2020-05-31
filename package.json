@@ -62,11 +62,18 @@
         "pesterExplorer.logpanel": {
           "description": "write diagnotic logs to an output panel",
           "type": "boolean",
+          "default": true,
           "scope": "resource"
         },
         "pesterExplorer.logfile": {
           "description": "write diagnostic logs to the given file",
           "type": "string",
+          "scope": "resource"
+        },
+        "pesterExplorer.testFilePath": {
+          "description": "The path to the file _relative_ to your workspace. (i.e. `foo/TestExplorerResults.xml` would exist in a `foo` folder in the root of your workspace.)",
+          "type": "string",
+          "default": "TestExplorerResults.xml",
           "scope": "resource"
         }
       }
