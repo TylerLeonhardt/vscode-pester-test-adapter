@@ -3,7 +3,7 @@
 ![logo](img/test-explorer-pester.png)
 
 This repository contains a [Pester](https://github.com/Pester/Pester) implementation of a `TestAdapter` extension that works with the
-[Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) extension.
+[Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) extension for [Visual Studio Code](http://code.visualstudio.com/).
 
 ![screenshot](https://user-images.githubusercontent.com/2644648/83358111-12570900-a326-11ea-9a0e-d1449f824fbe.png)
 
