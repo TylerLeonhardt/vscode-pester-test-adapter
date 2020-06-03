@@ -1,22 +1,15 @@
 # Pester Test Adapter for Visual Studio Code
 
+![logo](img/test-explorer-pester.png)
+
 This repository contains a [Pester](https://github.com/Pester/Pester) implementation of a `TestAdapter` extension that works with the
-[Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) extension.
+[Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) extension for [Visual Studio Code](http://code.visualstudio.com/).
 
 ![screenshot](https://user-images.githubusercontent.com/2644648/83358111-12570900-a326-11ea-9a0e-d1449f824fbe.png)
 
-More documentation can be found in the [Test Adapter API repository](https://github.com/hbenl/vscode-test-adapter-api).
+It currently supports running and debugging Pester tests as the workspace, file, `Describe`, or `It` level!
 
-## Roadmap
-
-* [x] Running tests
-* [x] Debugging tests
-* [ ] implement the `cancel()` method (it should kill the child process that was started by `run()` or `debug()`)
-* [ ] watch the configuration for any changes that may affect the loading of test definitions and reload the test definitions if necessary
-* [ ] watch the workspace for any changes to the test files and reload the test definitions if necessary
-* [ ] watch the configuration for any changes that may affect the results of running the tests and emit an `autorun` event if necessary
-* [ ] watch the workspace for any changes to the source files and emit an `autorun` event if necessary
-* [ ] ensure that only one test run is active at a time
+It leverages the [PowerShell extension for VS Code](https://github.com/PowerShell/vscode-powershell) to run and debug.
 
 ## Local development
 
