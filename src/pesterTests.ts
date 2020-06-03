@@ -11,6 +11,7 @@ import { Log } from 'vscode-test-adapter-util';
 export class PesterTestRunner {
 	private readonly watcher: vscode.FileSystemWatcher;
 	private readonly testOutputLocation: string;
+
 	private pesterTestSuite: TestSuiteInfo = {
 		type: 'suite',
 		id: 'root',
@@ -186,11 +187,38 @@ export class PesterTestRunner {
 				}
 			}
 		} else {
+			if (!xmlNode._attributes.result) {
+				// This test wasn't run, so we skip it.
+				return;
+			}
+
+			let state: string;
+			// This maps the result possibilities in Pester found here: https://github.com/pester/Pester/blob/edb9acb73461b55df397ef974d0da2a4bea6921f/src/functions/TestResults.ps1#L783-L796
+			// and the state possibilities in Test Explorer UI.
+			switch (xmlNode._attributes.result) {
+				case 'Failure':
+					state = 'failed';
+					break;
+				case 'Ignored':
+					state = 'skipped';
+					break;
+				case 'Inconclusive':
+					state = 'skipped';
+					break;
+				case 'Success':
+					state = 'passed';
+					break;
+				default:
+					// Skipped is probably closest to "I don't recognize the result".
+					// This would only happen if Pester changed it's results.
+					state = 'skipped';
+					break;
+			}
+
 			this.testStatesEmitter.fire(<TestEvent>{
 				type: searchNode.type,
 				test: searchNode.id,
-				// TODO: Update this with map of NUnit -> Test Explorer state
-				state: xmlNode._attributes.result == "Failure" ? "failed" : "passed"
+				state: state
 			});
 		}
 	}
