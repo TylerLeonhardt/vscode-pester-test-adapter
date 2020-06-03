@@ -171,18 +171,30 @@ export class PesterTestRunner {
 		if (searchNode.type == 'suite') {
 	
 			this.testStatesEmitter.fire(<TestSuiteEvent>{ type: 'suite', suite: searchNode.id, state: 'completed' });
-			
-			const xmlResults = xmlNode.results['test-suite'] || xmlNode.results['test-case']
-			for (const child of (searchNode as TestSuiteInfo).children) {
-				if (Array.isArray(xmlResults)) {
-					for (const xmlChild of xmlResults) {
-						if (child.id == xmlChild._attributes.description || child.label == xmlChild._attributes.description) {
-							this.emitNodeUpdate(child, xmlChild);
-						}
-					}
+
+			let xmlResults: any[] = [];
+			if (xmlNode.results['test-suite']) {
+				if(Array.isArray(xmlNode.results['test-suite'])) {
+					xmlResults.push(...xmlNode.results['test-suite']);
 				} else {
-					if (child.id == xmlResults._attributes.description || child.label == xmlResults._attributes.description) {
-						this.emitNodeUpdate(child, xmlResults);
+					xmlResults.push(xmlNode.results['test-suite']);
+				}
+			}
+
+			if (xmlNode.results['test-case']) {
+				if(Array.isArray(xmlNode.results['test-case'])) {
+					xmlResults.push(...xmlNode.results['test-case']);
+				} else {
+					xmlResults.push(xmlNode.results['test-case']);
+				}
+			}
+
+			for (const child of (searchNode as TestSuiteInfo).children) {
+				for (const xmlChild of xmlResults) {
+					if (child.id == xmlChild._attributes.description
+						|| child.label == xmlChild._attributes.description
+						|| `${searchNode.label}.${child.label}` === xmlChild._attributes.description) {
+						this.emitNodeUpdate(child, xmlChild);
 					}
 				}
 			}

@@ -33,6 +33,8 @@ function New-SuiteObject ($Block) {
     [PSCustomObject]@{
         type = 'suite'
         id = "$($Block.ScriptBlock.File);$($Block.ScriptBlock.StartPosition.StartLine)"
+        file = $Block.ScriptBlock.File
+        line = $Block.ScriptBlock.StartPosition.StartLine - 1
         label = $Block.Name
         children = [Collections.Generic.List[Object]]@()
     }
@@ -42,6 +44,8 @@ function New-TestObject ($Test) {
     [PSCustomObject]@{
         type = 'test'
         id = "$($Test.ScriptBlock.File);$($Test.ScriptBlock.StartPosition.StartLine)"
+        file = $Test.ScriptBlock.File
+        line = $Test.ScriptBlock.StartPosition.StartLine - 1
         label = $Test.Name
     }
 }
@@ -76,6 +80,7 @@ foreach ($file in $found) {
     $fileSuite = [PSCustomObject]@{
         type = 'suite'
         id = $file.BlockContainer.Item.FullName
+        file = $file.BlockContainer.Item.FullName
         label = $file.BlockContainer.Item.Name
         children = [Collections.Generic.List[Object]]@()
     }
