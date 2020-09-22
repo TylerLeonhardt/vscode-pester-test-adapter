@@ -4,13 +4,15 @@ import * as vscode from 'vscode';
 import * as convert from 'xml-js';
 import { spawn } from 'child_process';
 import { TestSuiteInfo, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
-import { PowerShellExeFinder, getPlatformDetails, IPowerShellAdditionalExePathSettings, IPowerShellExeDetails } from './process';
 import { getPesterScript } from './constants';
+import { PowerShellExtensionClient } from './powershellExtension';
 import { Log } from 'vscode-test-adapter-util';
 
 export class PesterTestRunner {
 	private readonly watcher: vscode.FileSystemWatcher;
 	private readonly testOutputLocation: string;
+
+	private readonly powershellExtensionClient: PowerShellExtensionClient;
 
 	private pesterTestSuite: TestSuiteInfo = {
 		type: 'suite',
@@ -19,18 +21,15 @@ export class PesterTestRunner {
 		children: []
 	}
 
-	private readonly powershellExeFinder: PowerShellExeFinder;
-
 	public constructor(
 		public readonly workspace: vscode.WorkspaceFolder,
 		private readonly testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>,
 		private readonly log: Log
 	) {
 		this.log.info('Initializing Pester test runner.');
+		this.powershellExtensionClient = new PowerShellExtensionClient();
+		this.powershellExtensionClient.RegisterExtension('ms-vscode.vscode-pester-test-adapter');
 
-		const config = vscode.workspace.getConfiguration("powershell");
-		const additionalPaths = config.get<Iterable<IPowerShellAdditionalExePathSettings>>("powerShellAdditionalExePaths");
-		this.powershellExeFinder = new PowerShellExeFinder(getPlatformDetails(), additionalPaths);
 		// TODO: Pull file path from settings
 		this.testOutputLocation = path.join(this.workspace.uri.fsPath, 'TestExplorerResults.xml');
 		this.watcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
@@ -41,7 +40,7 @@ export class PesterTestRunner {
 		const files = await vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, '**/*.Tests.ps1'));
 		this.log.debug(`Found ${files.length} paths`);
 	
-		const exePath = this.getPowerShellExe();
+		const exePath = await this.getPowerShellExe();
 		const ls = spawn(exePath, ['-Command', getPesterScript(files.map(uri => uri.fsPath))]);
 	
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
@@ -86,29 +85,10 @@ export class PesterTestRunner {
 		}
 	}
 
-	private getPowerShellExe(): string {
-		const config = vscode.workspace.getConfiguration("powershell");
-		const defaultVersion = config.get<string>("powerShellDefaultVersion");
-		let powerShellExeDetails: IPowerShellExeDetails | undefined;
-		if (defaultVersion) {
-			for (const details of this.powershellExeFinder.enumeratePowerShellInstallations()) {
-				// Need to compare names case-insensitively, from https://stackoverflow.com/a/2140723
-				if (defaultVersion.localeCompare(details.displayName, undefined, { sensitivity: "accent" }) === 0) {
-					powerShellExeDetails = details;
-					break;
-				}
-			}
-		}
-
-		const exe = powerShellExeDetails ||
-                this.powershellExeFinder.getFirstAvailablePowerShellInstallation();
-
-		if (!exe) {
-			throw new Error("PowerShell is not installed.")
-		}
-
-		this.log.debug(`Using ${exe.displayName} at: ${exe.exePath}`);
-		return exe.exePath;
+	private async getPowerShellExe(): Promise<string> {
+		const details = await this.powershellExtensionClient.GetVersionDetails();
+		this.log.debug(`Using ${details.displayName} at: ${details.exePath}`);
+		return details.exePath;
 	}
 
 	private findNode(searchNode: TestSuiteInfo | TestInfo, id: string): TestSuiteInfo | TestInfo | undefined {
