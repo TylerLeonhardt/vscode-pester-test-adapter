@@ -9,7 +9,7 @@ import { PowerShellExtensionClient } from './powershellExtension';
 import { Log } from 'vscode-test-adapter-util';
 
 export class PesterTestRunner {
-	private readonly watcher: vscode.FileSystemWatcher;
+	private readonly testOutputWatcher: vscode.FileSystemWatcher;
 	private readonly testOutputLocation: string;
 
 	private readonly powershellExtensionClient: PowerShellExtensionClient;
@@ -28,16 +28,16 @@ export class PesterTestRunner {
 	) {
 		this.log.info('Initializing Pester test runner.');
 		this.powershellExtensionClient = new PowerShellExtensionClient();
-		this.powershellExtensionClient.RegisterExtension('ms-vscode.vscode-pester-test-adapter');
+		this.powershellExtensionClient.RegisterExtension('TylerLeonhardt.vscode-pester-test-adapter');
 
 		// TODO: Pull file path from settings
 		this.testOutputLocation = path.join(this.workspace.uri.fsPath, 'TestExplorerResults.xml');
-		this.watcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
-		this.watcher.onDidChange((e: vscode.Uri) => this.loadTestFile(e));
+		this.testOutputWatcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
+		this.testOutputWatcher.onDidChange((e: vscode.Uri) => this.loadTestFile(e));
 	}
 
-	public async loadPesterTests(): Promise<TestSuiteInfo> {
-		const files = await vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, '**/*.Tests.ps1'));
+	public async loadPesterTests(files?: vscode.Uri[], skipLoadingResults?: boolean): Promise<TestSuiteInfo> {
+		files ??= await vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, '**/*.[tT]ests.ps1'));
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
@@ -57,17 +57,36 @@ export class PesterTestRunner {
 		
 			ls.on('close', (code) => {
 				this.log.debug(`child process exited with code ${code}`);
-				this.pesterTestSuite = JSON.parse(strData) as TestSuiteInfo;
 
-				const config = vscode.workspace.getConfiguration("pesterExplorer");
-				const relativePath = config.get<string>("testFilePath")!;
-				vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, relativePath)).then((files: vscode.Uri[]) => {
-					if (files.length > 1) {
-						throw new Error("More than one test file found.");
+				const testSuiteInfo = JSON.parse(strData) as TestSuiteInfo;
+				outer: for (const newChild of testSuiteInfo.children) {
+					for (let i = 0; i < this.pesterTestSuite.children.length; i++) {
+						const oldChild = this.pesterTestSuite.children[i];
+						if (newChild.id === oldChild.id) {
+							this.pesterTestSuite.children[i] = newChild;
+							continue outer;
+						}
 					}
-		
-					this.loadTestFile(files[0]);
-				});
+					this.pesterTestSuite.children.push(newChild);
+				}
+
+				if (!skipLoadingResults) {
+					const config = vscode.workspace.getConfiguration("pesterExplorer");
+					const relativePath = config.get<string>("testFilePath")!;
+					vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, relativePath)).then((files: vscode.Uri[]) => {
+						if (!files.length) {
+							this.log.debug('No test files found.');
+							return;
+						}
+
+						if (files.length > 1) {
+							throw new Error("More than one test file found.");
+						}
+
+						this.loadTestFile(files[0]);
+					});
+				}
+
 				resolve(this.pesterTestSuite);
 			});
 		});
