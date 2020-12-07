@@ -17,7 +17,6 @@ export class PesterTaskInvoker {
         // terminate the current task if it is still running.
         this.currentTaskExecution?.terminate();
         const task = this.createTask(pwshExePath, filePath, this.outputPath, lineNumber);
-        task.isBackground = true;
         task.presentationOptions.echo = false;
         this.currentTaskExecution = await vscode.tasks.executeTask(task);
     }
