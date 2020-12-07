@@ -6,6 +6,7 @@ import { spawn } from 'child_process';
 import { TestSuiteInfo, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { getPesterScript } from './constants';
 import { PowerShellExtensionClient } from './powershellExtension';
+import { PesterTaskInvoker } from './pesterTaskInvoker';
 import { Log } from 'vscode-test-adapter-util';
 
 export class PesterTestRunner {
@@ -13,6 +14,7 @@ export class PesterTestRunner {
 	private readonly testOutputLocation: string;
 
 	private readonly powershellExtensionClient: PowerShellExtensionClient;
+	private readonly pesterInvoker: PesterTaskInvoker;
 
 	private pesterTestSuite: TestSuiteInfo = {
 		type: 'suite',
@@ -32,8 +34,14 @@ export class PesterTestRunner {
 
 		// TODO: Pull file path from settings
 		this.testOutputLocation = path.join(this.workspace.uri.fsPath, 'TestExplorerResults.xml');
+
+		this.pesterInvoker = new PesterTaskInvoker(this.powershellExtensionClient, this.testOutputLocation);
 		this.testOutputWatcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
 		this.testOutputWatcher.onDidChange((e: vscode.Uri) => this.loadTestFile(e));
+	}
+
+	public getRootTestSuite(): TestSuiteInfo {
+		return this.pesterTestSuite;
 	}
 
 	public async loadPesterTests(files?: vscode.Uri[], skipLoadingResults?: boolean): Promise<TestSuiteInfo> {
@@ -42,7 +50,7 @@ export class PesterTestRunner {
 	
 		const exePath = await this.getPowerShellExe();
 		const ls = spawn(exePath, ['-Command', getPesterScript(files.map(uri => uri.fsPath))]);
-	
+
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
 			ls.stdout.on('data', (data) => {
@@ -87,7 +95,7 @@ export class PesterTestRunner {
 					});
 				}
 
-				resolve(this.pesterTestSuite);
+				resolve(testSuiteInfo);
 			});
 		});
 	}
@@ -99,7 +107,7 @@ export class PesterTestRunner {
 		for (const suiteOrTestId of tests) {
 			const node = this.findNode(this.pesterTestSuite, suiteOrTestId);
 			if (node) {
-				this.runNode(node, this.testStatesEmitter, isDebug);
+				await this.runNode(node, this.testStatesEmitter, isDebug);
 			}
 		}
 	}
@@ -122,11 +130,11 @@ export class PesterTestRunner {
 		return undefined;
 	}
 
-	private runNode(
+	private async runNode(
 		node: TestSuiteInfo | TestInfo,
 		testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>,
 		isDebug: boolean
-	): void {
+	): Promise<void> {
 		if (node.type === 'suite') {
 			testStatesEmitter.fire(<TestSuiteEvent>{ type: 'suite', suite: node.id, state: 'running' });
 		} else {
@@ -151,13 +159,19 @@ export class PesterTestRunner {
 			lineNumber = "";
 		}
 
-		vscode.commands.executeCommand(
-			"PowerShell.RunPesterTests",
-			filePath,
-			isDebug,
-			null,
-			lineNumber,
-			this.testOutputLocation);
+		if (isDebug) {
+			vscode.commands.executeCommand(
+				"PowerShell.RunPesterTests",
+				filePath,
+				isDebug,
+				null,
+				lineNumber,
+				this.testOutputLocation);
+
+			return;
+		}
+
+		await this.pesterInvoker.runTests(filePath, lineNumber);
 	}
 
 	private loadTestFile(uri: vscode.Uri) {
