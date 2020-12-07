@@ -19,6 +19,7 @@ export class PowerShellExtensionClient {
     private internalPowerShellExtensionClient: IPowerShellExtensionClient
     constructor() {
         const powershellExtension = vscode.extensions.getExtension<IPowerShellExtensionClient>("ms-vscode.PowerShell-Preview");
+        this.ExtensionPath = powershellExtension?.extensionPath ?? "";
         this.internalPowerShellExtensionClient = powershellExtension!.exports as IPowerShellExtensionClient;
     }
     private _sessionId: string | undefined;
@@ -33,6 +34,8 @@ export class PowerShellExtensionClient {
     private set sessionId(id: string | undefined) {
         this._sessionId = id;
     }
+
+    public readonly ExtensionPath: string;
 
     public get IsConnected() {
         return this._sessionId != null;
