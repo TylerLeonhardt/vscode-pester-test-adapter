@@ -8,6 +8,10 @@ export class PesterTaskInvoker {
     constructor(
         private readonly powershellExtensionClient: PowerShellExtensionClient,
         private readonly outputPath: string) {
+
+        // Since we pass the script path to PSES in single quotes to avoid issues with PowerShell
+        // special chars like & $ @ () [], we do have to double up the interior single quotes.
+        outputPath = outputPath.replace(/'/g, "''");
     }
 
     public async runTests(filePath: string, lineNumber?: string): Promise<void> {
