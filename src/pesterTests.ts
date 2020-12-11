@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import * as convert from 'xml-js';
 import { spawn } from 'child_process';
 import { TestSuiteInfo, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
-import { getPesterScript } from './constants';
+import { getPesterDiscoveryScript } from './powershellScripts';
 import { PowerShellExtensionClient } from './powershellExtension';
 import { PesterTaskInvoker } from './pesterTaskInvoker';
 import { Log } from 'vscode-test-adapter-util';
@@ -49,7 +49,7 @@ export class PesterTestRunner {
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
-		const ls = spawn(exePath, ['-Command', getPesterScript(files.map(uri => uri.fsPath))]);
+		const ls = spawn(exePath, ['-Command', getPesterDiscoveryScript(files.map(uri => uri.fsPath))]);
 
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
@@ -59,14 +59,27 @@ export class PesterTestRunner {
 			});
 		
 			ls.stderr.on('data', (data) => {
-				this.log.error(`stderr: ${data}`);
+				const err: string = data.toString();
+				this.log.error(`stderr: ${err}`);
+
+				if (err.includes("no valid module file")) {
+					vscode.window.showErrorMessage("Pester version '5.0.0' or higher was not found in any module directory. Make sure you have Pester v5+ installed: Install-Module Pester -MinimumVersion 5.0")
+				}
+
 				reject(data);
 			});
-		
+
 			ls.on('close', (code) => {
 				this.log.debug(`child process exited with code ${code}`);
 
-				const testSuiteInfo = JSON.parse(strData) as TestSuiteInfo;
+				let testSuiteInfo = null;
+				try {
+					testSuiteInfo = JSON.parse(strData) as TestSuiteInfo;
+				} catch (e) {
+					this.log.error(`Unable to parse JSON data from Pester test discovery script. Contents: ${strData}`);
+					throw e;
+				}
+
 				outer: for (const newChild of testSuiteInfo.children) {
 					for (let i = 0; i < this.pesterTestSuite.children.length; i++) {
 						const oldChild = this.pesterTestSuite.children[i];
