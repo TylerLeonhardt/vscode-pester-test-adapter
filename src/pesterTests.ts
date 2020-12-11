@@ -49,7 +49,11 @@ export class PesterTestRunner {
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
-		const ls = spawn(exePath, ['-Command', getPesterDiscoveryScript(files.map(uri => uri.fsPath))]);
+		const ls = spawn(exePath, [
+			'-NonInteractive',
+			'-NoLogo',
+			'-NoProfile',
+			'-Command', getPesterDiscoveryScript(files.map(uri => uri.fsPath))]);
 
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
@@ -64,9 +68,8 @@ export class PesterTestRunner {
 
 				if (err.includes("no valid module file")) {
 					vscode.window.showErrorMessage("Pester version '5.0.0' or higher was not found in any module directory. Make sure you have Pester v5+ installed: Install-Module Pester -MinimumVersion 5.0")
+					resolve(this.pesterTestSuite);
 				}
-
-				reject(data);
 			});
 
 			ls.on('close', (code) => {
