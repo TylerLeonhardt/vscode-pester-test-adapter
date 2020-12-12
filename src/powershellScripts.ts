@@ -1,7 +1,10 @@
+import * as os from "os";
+
 export function getPesterDiscoveryScript(paths: string[]): string {
+    const pathStr = "'" + paths.map(p => p.replace(/'/g, "''")).join(`'${os.EOL}'`) + "'"
     return `
 $Path = @(
-"${paths.join('"\n"')}"
+    ${pathStr}
 )
 
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
@@ -32,7 +35,7 @@ function Discover-Test
 function New-SuiteObject ($Block) { 
     [PSCustomObject]@{
         type = 'suite'
-        id = "$($Block.ScriptBlock.File);$($Block.ScriptBlock.StartPosition.StartLine)"
+        id = $Block.ScriptBlock.File + ';' + $Block.ScriptBlock.StartPosition.StartLine
         file = $Block.ScriptBlock.File
         line = $Block.ScriptBlock.StartPosition.StartLine - 1
         label = $Block.Name
@@ -43,7 +46,7 @@ function New-SuiteObject ($Block) {
 function New-TestObject ($Test) { 
     [PSCustomObject]@{
         type = 'test'
-        id = "$($Test.ScriptBlock.File);$($Test.ScriptBlock.StartPosition.StartLine)"
+        id = $Test.ScriptBlock.File + ';' + $Test.ScriptBlock.StartPosition.StartLine
         file = $Test.ScriptBlock.File
         line = $Test.ScriptBlock.StartPosition.StartLine - 1
         label = $Test.Name

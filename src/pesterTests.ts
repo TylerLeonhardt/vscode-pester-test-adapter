@@ -49,11 +49,14 @@ export class PesterTestRunner {
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
+
+		const script = getPesterDiscoveryScript(files.map(uri => uri.fsPath));
+		this.log.debug(script);
 		const ls = spawn(exePath, [
 			'-NonInteractive',
 			'-NoLogo',
 			'-NoProfile',
-			'-Command', getPesterDiscoveryScript(files.map(uri => uri.fsPath))]);
+			'-Command', script]);
 
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
