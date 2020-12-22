@@ -16,6 +16,7 @@ export class PesterTestRunner {
 	private readonly powershellExtensionClient: PowerShellExtensionClient;
 	private readonly pesterInvoker: PesterTaskInvoker;
 
+	private testRootDirectory: string | undefined;
 	private pesterTestSuite: TestSuiteInfo = {
 		type: 'suite',
 		id: 'root',
@@ -135,20 +136,41 @@ export class PesterTestRunner {
 	}
 
 	public getTestRootDirectory(): string {
+		if (this.testRootDirectory) {
+			return this.testRootDirectory;
+		}
+
 		let testRootDirectory = vscode.workspace
 			.getConfiguration('pesterExplorer')
-			.get<string>('testRootDirectory') || this.workspace.uri.fsPath;
+			.get<string>('testRootDirectory');
+
+		if (testRootDirectory && !fs.existsSync(testRootDirectory)) {
+			vscode.window.showErrorMessage("Invalid 'pesterExplorer.testRootDirectory' configuration. Please make sure this directory exists on the filesystem.");
+			testRootDirectory = this.workspace.uri.fsPath;
+		}
+
+		// Try to discover a test/tests folder.
+		if (!testRootDirectory) {
+			testRootDirectory = this.workspace.uri.fsPath;
+
+			const dirs = fs.readdirSync(this.workspace.uri.fsPath, {
+				withFileTypes: true
+			});
+
+			for (const dir of dirs) {
+				if (dir.isDirectory() && dir.name.match(/^[Tt]ests?$/)) {
+					testRootDirectory = dir.name;
+					break;
+				}
+			}
+		}
 
 		if (!path.isAbsolute(testRootDirectory)) {
 			// We were given a relative path.
 			testRootDirectory = path.join(this.workspace.uri.fsPath, testRootDirectory);
 		}
 
-		if (!fs.existsSync(testRootDirectory)) {
-			vscode.window.showErrorMessage("Invalid 'pesterExplorer.testRootDirectory' configuration. Please make sure this directory exists on the filesystem.");
-			return this.workspace.uri.fsPath;
-		}
-
+		this.testRootDirectory = testRootDirectory;
 		return testRootDirectory;
 	}
 
