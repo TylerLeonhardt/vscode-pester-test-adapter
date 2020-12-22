@@ -20,6 +20,22 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		const testHub = testExplorerExtension.exports;
 
+		const autoDiscover = vscode.workspace.getConfiguration('pesterExplorer').get<boolean>('autoDiscoverOnOpen');
+
+		if (!autoDiscover) {
+			const choice = await vscode.window.showInformationMessage(
+				"Pester test discovery requires the code outside of 'Describe' blocks in all '*.Tests.ps1' file to be executed. Would you like to run Pester test discovery?",
+				'Yes', 'No', 'Always');
+
+			if(!choice || choice === 'No') {
+				return
+			} else if (choice === 'Always') {
+				vscode.workspace
+					.getConfiguration('pesterExplorer')
+					.update('autoDiscoverOnOpen', true, vscode.ConfigurationTarget.Global);
+			}
+		}
+
 		// this will register an PesterTestAdapter for each WorkspaceFolder
 		context.subscriptions.push(new TestAdapterRegistrar(
 			testHub,
