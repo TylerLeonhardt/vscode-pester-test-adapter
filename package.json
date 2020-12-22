@@ -4,7 +4,7 @@
   "description": "Run your Pester tests in the Sidebar of Visual Studio Code",
   "icon": "img/test-explorer-pester.png",
   "publisher": "TylerLeonhardt",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "license": "MIT",
   "homepage": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter",
   "repository": {
@@ -83,7 +83,7 @@
           "scope": "resource"
         },
         "pesterExplorer.testRootDirectory": {
-          "description": "Specify the root directory of the location of your tests. Defaults to the Workspace/Folder root.",
+          "description": "Specify the root directory of the location of your tests. The default behavior attempts to find a folder called 'test', 'tests', 'Test', or 'Tests' relative to the workspace/folder opened. If it can't find a folder like this, the root of the workspace/folder is used.",
           "type": "string",
           "scope": "resource"
         }
