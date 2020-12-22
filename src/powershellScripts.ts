@@ -27,6 +27,10 @@ function Discover-Test
         $invokedViaInvokePester = $true
         $files = Find-File -Path $Path -ExcludePath $ExcludePath -Extension $PesterPreference.Run.TestExtension.Value
         $containers = foreach ($f in $files) {
+            <# HACK: We check to see if there is a single Describe block in the file so that we don't accidentally execute code that shouldn't need to be executed. #>
+            if (!(Select-String -Path $f -SimpleMatch 'Describe')) {
+                continue
+            }
             New-BlockContainerObject -File (Get-Item $f)
         }
         Find-Test -BlockContainer $containers -SessionState $SessionState } -Path $Path -ExcludePath $ExcludePath -SessionState $PSCmdlet.SessionState
