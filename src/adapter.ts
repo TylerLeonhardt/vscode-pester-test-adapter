@@ -34,7 +34,7 @@ export class PesterAdapter implements TestAdapter {
 		this.disposables.push(this.autorunEmitter);
 		this.pesterTestRunner = new PesterTestRunner(workspace, this.testStatesEmitter, log);
 
-		const rel = new vscode.RelativePattern(this.workspace, '**/*.[tT]ests.ps1');
+		const rel = new vscode.RelativePattern(this.pesterTestRunner.getTestRootDirectory(), '**/*.[tT]ests.ps1');
 		const testFilesWatcher = vscode.workspace.createFileSystemWatcher(rel, false, false, false);
 		testFilesWatcher.onDidChange(async (e: vscode.Uri) => {
 			this.testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });

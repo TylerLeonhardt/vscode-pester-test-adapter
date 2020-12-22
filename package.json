@@ -4,7 +4,7 @@
   "description": "Run your Pester tests in the Sidebar of Visual Studio Code",
   "icon": "img/test-explorer-pester.png",
   "publisher": "TylerLeonhardt",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "license": "MIT",
   "homepage": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter",
   "repository": {
@@ -41,7 +41,8 @@
   "devDependencies": {
     "@types/vscode": "~1.50.0",
     "typescript": "~4.1.2",
-    "vsce": "~1.81.1"
+    "vsce": "~1.81.1",
+    "rimraf": "3.0.2"
   },
   "engines": {
     "vscode": "^1.50.0"
@@ -69,7 +70,7 @@
           "type": "string",
           "scope": "resource"
         },
-        "pesterExplorer.testFilePath": {
+        "pesterExplorer.testResultsFilePath": {
           "description": "The path to the file _relative_ to your workspace. (i.e. `foo/TestExplorerResults.xml` would exist in a `foo` folder in the root of your workspace.)",
           "type": "string",
           "default": "TestExplorerResults.xml",
@@ -79,6 +80,11 @@
           "description": "If set to true, test discovery will be triggered when a workspace/folder is opened. If set to false, you will be prompted.",
           "type": "boolean",
           "default": false,
+          "scope": "resource"
+        },
+        "pesterExplorer.testRootDirectory": {
+          "description": "Specify the root directory of the location of your tests. Defaults to the Workspace/Folder root.",
+          "type": "string",
           "scope": "resource"
         }
       }

@@ -32,8 +32,10 @@ export class PesterTestRunner {
 		this.powershellExtensionClient = new PowerShellExtensionClient();
 		this.powershellExtensionClient.RegisterExtension('TylerLeonhardt.vscode-pester-test-adapter');
 
-		// TODO: Pull file path from settings
-		this.testOutputLocation = path.join(this.workspace.uri.fsPath, 'TestExplorerResults.xml');
+		const relativePath = vscode.workspace
+			.getConfiguration("pesterExplorer")
+			.get<string>("testResultsFilePath")!;
+		this.testOutputLocation = path.join(this.workspace.uri.fsPath, relativePath);
 
 		this.pesterInvoker = new PesterTaskInvoker(this.powershellExtensionClient, this.testOutputLocation);
 		this.testOutputWatcher = vscode.workspace.createFileSystemWatcher(this.testOutputLocation, false, false, false);
@@ -45,7 +47,7 @@ export class PesterTestRunner {
 	}
 
 	public async loadPesterTests(files?: vscode.Uri[], skipLoadingResults?: boolean): Promise<TestSuiteInfo> {
-		files ??= await vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, '**/*.[tT]ests.ps1'));
+		files ??= await vscode.workspace.findFiles(new vscode.RelativePattern(this.getTestRootDirectory(), '**/*.[tT]ests.ps1'));
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
@@ -98,8 +100,9 @@ export class PesterTestRunner {
 				}
 
 				if (!skipLoadingResults) {
-					const config = vscode.workspace.getConfiguration("pesterExplorer");
-					const relativePath = config.get<string>("testFilePath")!;
+					const relativePath = vscode.workspace
+						.getConfiguration("pesterExplorer")
+						.get<string>("testResultsFilePath")!;
 					vscode.workspace.findFiles(new vscode.RelativePattern(this.workspace, relativePath)).then((files: vscode.Uri[]) => {
 						if (!files.length) {
 							this.log.debug('No test files found.');
@@ -129,6 +132,24 @@ export class PesterTestRunner {
 				await this.runNode(node, this.testStatesEmitter, isDebug);
 			}
 		}
+	}
+
+	public getTestRootDirectory(): string {
+		let testRootDirectory = vscode.workspace
+			.getConfiguration('pesterExplorer')
+			.get<string>('testRootDirectory') || this.workspace.uri.fsPath;
+
+		if (!path.isAbsolute(testRootDirectory)) {
+			// We were given a relative path.
+			testRootDirectory = path.join(this.workspace.uri.fsPath, testRootDirectory);
+		}
+
+		if (!fs.existsSync(testRootDirectory)) {
+			vscode.window.showErrorMessage("Invalid 'pesterExplorer.testRootDirectory' configuration. Please make sure this directory exists on the filesystem.");
+			return this.workspace.uri.fsPath;
+		}
+
+		return testRootDirectory;
 	}
 
 	private async getPowerShellExe(): Promise<string> {
@@ -165,7 +186,7 @@ export class PesterTestRunner {
 		let lineNumber: string;
 		if (node.id === 'root') {
 			// Run all of the files in a workspace.
-			filePath = this.workspace.uri.fsPath;
+			filePath = this.getTestRootDirectory();
 			lineNumber = "";
 		} else if (node.id.indexOf(';') !== -1) {
 			// Run a section of a file.
