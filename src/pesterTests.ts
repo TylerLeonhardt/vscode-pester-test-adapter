@@ -144,13 +144,18 @@ export class PesterTestRunner {
 			.getConfiguration('pesterExplorer')
 			.get<string>('testRootDirectory');
 
-		if (testRootDirectory && !fs.existsSync(testRootDirectory)) {
-			vscode.window.showErrorMessage("Invalid 'pesterExplorer.testRootDirectory' configuration. Please make sure this directory exists on the filesystem.");
-			testRootDirectory = this.workspace.uri.fsPath;
-		}
+		if (testRootDirectory) {
+			if (!path.isAbsolute(testRootDirectory)) {
+				// We were given a relative path.
+				testRootDirectory = path.join(this.workspace.uri.fsPath, testRootDirectory);
+			}
 
-		// Try to discover a test/tests folder.
-		if (!testRootDirectory) {
+			if (!fs.existsSync(testRootDirectory)) {
+				vscode.window.showErrorMessage("Invalid 'pesterExplorer.testRootDirectory' configuration. Please make sure this directory exists on the filesystem.");
+				testRootDirectory = this.workspace.uri.fsPath;
+			}
+		} else {
+			// Try to discover a test/tests folder.
 			testRootDirectory = this.workspace.uri.fsPath;
 
 			const dirs = fs.readdirSync(this.workspace.uri.fsPath, {
@@ -159,15 +164,10 @@ export class PesterTestRunner {
 
 			for (const dir of dirs) {
 				if (dir.isDirectory() && dir.name.match(/^[Tt]ests?$/)) {
-					testRootDirectory = dir.name;
+					testRootDirectory = path.join(this.workspace.uri.fsPath, dir.name);
 					break;
 				}
 			}
-		}
-
-		if (!path.isAbsolute(testRootDirectory)) {
-			// We were given a relative path.
-			testRootDirectory = path.join(this.workspace.uri.fsPath, testRootDirectory);
 		}
 
 		this.testRootDirectory = testRootDirectory;
