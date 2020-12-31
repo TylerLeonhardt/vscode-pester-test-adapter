@@ -86,7 +86,7 @@ export class PesterTestRunner {
 					testSuiteInfo = JSON.parse(strData) as TestSuiteInfo;
 				} catch (e) {
 					this.log.error(`Unable to parse JSON data from Pester test discovery script. Contents: ${strData}`);
-					throw e;
+					testSuiteInfo = this.pesterTestSuite;
 				}
 
 				outer: for (const newChild of testSuiteInfo.children) {
@@ -110,10 +110,6 @@ export class PesterTestRunner {
 							return;
 						}
 
-						if (files.length > 1) {
-							throw new Error("More than one test file found.");
-						}
-
 						this.loadTestFile(files[0]);
 					});
 				}
@@ -133,6 +129,10 @@ export class PesterTestRunner {
 				await this.runNode(node, this.testStatesEmitter, isDebug);
 			}
 		}
+	}
+
+	public stopPesterTests(): void {
+		this.pesterInvoker.stopTests();
 	}
 
 	public getTestRootDirectory(): string {
