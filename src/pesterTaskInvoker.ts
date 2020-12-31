@@ -26,6 +26,10 @@ export class PesterTaskInvoker {
         this.currentTaskExecution = await vscode.tasks.executeTask(task);
     }
 
+    public async stopTests() {
+        this.currentTaskExecution?.terminate();
+    }
+
     private createTask(
         pwshExePath: string,
         filePath: string,
