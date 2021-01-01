@@ -39,9 +39,9 @@ function Discover-Test
 function New-SuiteObject ($Block) { 
     [PSCustomObject]@{
         type = 'suite'
-        id = $Block.ScriptBlock.File + ';' + $Block.ScriptBlock.StartPosition.StartLine
+        id = $Block.ScriptBlock.File + ';' + $Block.StartLine
         file = $Block.ScriptBlock.File
-        line = $Block.ScriptBlock.StartPosition.StartLine - 1
+        line = $Block.StartLine - 1
         label = $Block.Name
         children = [Collections.Generic.List[Object]]@()
     }
@@ -50,9 +50,9 @@ function New-SuiteObject ($Block) {
 function New-TestObject ($Test) { 
     [PSCustomObject]@{
         type = 'test'
-        id = $Test.ScriptBlock.File + ';' + $Test.ScriptBlock.StartPosition.StartLine
+        id = $Test.ScriptBlock.File + ';' + $Test.StartLine
         file = $Test.ScriptBlock.File
-        line = $Test.ScriptBlock.StartPosition.StartLine - 1
+        line = $Test.StartLine - 1
         label = $Test.Name
     }
 }
@@ -63,9 +63,16 @@ function fold ($children, $Block) {
         $children.Add($o)
         fold $o.children $b
     }
-    foreach ($t in $Block.Tests) { 
+
+    $hashset = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($t in $Block.Tests) {
+        if ($hashset.Contains($t.ExpandedPath)) {
+            continue
+        }
         $children.Add((New-TestObject $t))
+        $hashset.Add($t.ExpandedPath) | Out-Null
     }
+    $hashset.Clear() | Out-Null
 }
 
 $found = Discover-Test -Path $Path
