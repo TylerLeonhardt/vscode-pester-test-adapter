@@ -224,7 +224,7 @@ export class PesterTestRunner {
 		if (isDebug) {
 			vscode.commands.executeCommand(
 				"PowerShell.RunPesterTests",
-				filePath,
+				vscode.Uri.file(filePath),
 				isDebug,
 				null,
 				lineNumber,
