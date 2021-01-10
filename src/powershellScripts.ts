@@ -66,11 +66,12 @@ function fold ($children, $Block) {
 
     $hashset = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($t in $Block.Tests) {
-        if ($hashset.Contains($t.ExpandedPath)) {
+        $key = "$($t.ExpandedPath):$($t.StartLine)"
+        if ($hashset.Contains($key)) {
             continue
         }
         $children.Add((New-TestObject $t))
-        $hashset.Add($t.ExpandedPath) | Out-Null
+        $hashset.Add($key) | Out-Null
     }
     $hashset.Clear() | Out-Null
 }
