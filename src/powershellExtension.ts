@@ -18,7 +18,7 @@ export interface IPowerShellExtensionClient {
 export class PowerShellExtensionClient {
     private internalPowerShellExtensionClient: IPowerShellExtensionClient
     constructor() {
-        const powershellExtension = vscode.extensions.getExtension<IPowerShellExtensionClient>("ms-vscode.PowerShell-Preview");
+        const powershellExtension = vscode.extensions.getExtension<IPowerShellExtensionClient>("ms-vscode.PowerShell-Preview") || vscode.extensions.getExtension<IPowerShellExtensionClient>("ms-vscode.PowerShell");
         this.ExtensionPath = powershellExtension?.extensionPath ?? "";
         this.internalPowerShellExtensionClient = powershellExtension!.exports as IPowerShellExtensionClient;
     }

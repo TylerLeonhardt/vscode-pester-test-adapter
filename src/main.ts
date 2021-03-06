@@ -5,6 +5,21 @@ import { PesterAdapter } from './adapter';
 
 export async function activate(context: vscode.ExtensionContext) {
 
+	const powershellExtension = vscode.extensions.getExtension("ms-vscode.PowerShell-Preview") || vscode.extensions.getExtension("ms-vscode.PowerShell");
+	if(!powershellExtension) {
+		await vscode.window.showErrorMessage('Please install either the PowerShell or PowerShell Preview extension and then reload the window to use the Pester Test Explorer.');
+		vscode.extensions.onDidChange(() => {
+			if (vscode.extensions.getExtension('ms-vscode.PowerShell') || vscode.extensions.getExtension('ms-vscode.PowerShell-Preview')) {
+				activate(context);
+			}
+		});
+		return;
+	}
+
+	if (!powershellExtension.isActive) {
+		await powershellExtension.activate();
+	}
+
 	const workspaceFolder = (vscode.workspace.workspaceFolders || [])[0];
 
 	// create a simple logger that can be configured with the configuration variables

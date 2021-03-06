@@ -4,7 +4,7 @@
   "description": "Run your Pester tests in the Sidebar of Visual Studio Code",
   "icon": "img/test-explorer-pester.png",
   "publisher": "TylerLeonhardt",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "license": "MIT",
   "homepage": "https://github.com/TylerLeonhardt/vscode-pester-test-adapter",
   "repository": {
@@ -41,19 +41,18 @@
   "devDependencies": {
     "@types/node": "^14.14.20",
     "@types/vscode": "~1.50.0",
-    "rimraf": "3.0.2",
-    "typescript": "~4.1.3",
-    "vsce": "~1.83.0"
+    "rimraf": "~3.0.2",
+    "typescript": "~4.2.3",
+    "vsce": "~1.85.1"
   },
   "engines": {
     "vscode": "^1.50.0"
   },
   "extensionDependencies": [
-    "hbenl.vscode-test-explorer",
-    "ms-vscode.powershell-preview"
+    "hbenl.vscode-test-explorer"
   ],
   "activationEvents": [
-    "*"
+    "workspaceContains:**/*.[Tt]ests.ps1"
   ],
   "contributes": {
     "configuration": {
