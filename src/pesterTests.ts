@@ -63,8 +63,16 @@ export class PesterTestRunner {
 
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
-			ls.stdout.on('data', (data) => {
-				this.log.debug(`stdout: ${data}`);
+
+			let jsonStarted = false;
+			ls.stdout.on('data', (data: Buffer) => {
+				const str = data.toString();
+				this.log.debug(`stdout: ${str}`);
+				if (!jsonStarted && !str.trimStart().startsWith('{')) {
+					return
+				} else if (!jsonStarted) {
+					jsonStarted = true;
+				}
 				strData += data;
 			});
 		
