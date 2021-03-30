@@ -64,15 +64,8 @@ export class PesterTestRunner {
 		return new Promise<TestSuiteInfo>((resolve, reject) => {
 			let strData: string = ""
 
-			let jsonStarted = false;
 			ls.stdout.on('data', (data: Buffer) => {
-				const str = data.toString();
-				this.log.debug(`stdout: ${str}`);
-				if (!jsonStarted && !str.trimStart().startsWith('{')) {
-					return
-				} else if (!jsonStarted) {
-					jsonStarted = true;
-				}
+				this.log.debug(`stdout: ${data}`);
 				strData += data;
 			});
 		
@@ -91,7 +84,12 @@ export class PesterTestRunner {
 
 				let testSuiteInfo = null;
 				try {
-					testSuiteInfo = JSON.parse(strData) as TestSuiteInfo;
+					const results = /{.+?"type": "suite",\s+"id": "root",\s+"label": "Pester",\s+"children".+}\s*$/si.exec(strData);
+					if(!results || !results[0]) {
+						throw new Error('Regex does not match');
+					}
+
+					testSuiteInfo = JSON.parse(results[0]) as TestSuiteInfo;
 				} catch (e) {
 					this.log.error(`Unable to parse JSON data from Pester test discovery script. Contents: ${strData}`);
 					testSuiteInfo = this.pesterTestSuite;
