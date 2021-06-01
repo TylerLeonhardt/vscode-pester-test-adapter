@@ -1,5 +1,9 @@
 import * as os from "os";
 
+export function getPesterVersion() {
+    return `(Get-InstalledModule Pester).Version`;
+}
+
 export function getPesterDiscoveryScript(paths: string[]): string {
     const pathStr = "'" + paths.map(p => p.replace(/'/g, "''")).join(`'${os.EOL}'`) + "'"
     return `
@@ -11,6 +15,8 @@ $VerbosePreference = 'Ignore'
 $WarningPreference = 'Ignore'
 $DebugPreference = 'Ignore'
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
+$PesterVersion = (Get-Module Pester).Version
+
 function Discover-Test
 {
     [CmdletBinding()]
@@ -79,12 +85,17 @@ function fold ($children, $Block) {
     $hashset.Clear() | Out-Null
 }
 
-$found = Discover-Test -Path $Path
-
-# whole suite
-$suite = [PSCustomObject]@{
-    Blocks = [Collections.Generic.List[Object]] $found
-    Tests = [Collections.Generic.List[Object]]@()
+if (($PesterVersion.Major -eq 5 -and $PesterVersion.Minor -ge 2) -or
+    $PesterVersion.Major -gt 5
+) {
+    $PesterConfig = [PesterConfiguration]::Default
+    $PesterConfig.Run.PassThru = $true
+    $PesterConfig.Run.Path = $Path
+    $PesterConfig.Run.SkipRun = $true
+    
+    $found = (Invoke-Pester -Configuration $PesterConfig).Containers
+} else {
+    $found = Discover-Test -Path $Path
 }
 
 $testSuiteInfo = [PSCustomObject]@{
@@ -94,16 +105,34 @@ $testSuiteInfo = [PSCustomObject]@{
     children = [Collections.Generic.List[Object]]@()
 }
 
-foreach ($file in $found) {
-    $fileSuite = [PSCustomObject]@{
-        type = 'suite'
-        id = $file.BlockContainer.Item.FullName
-        file = $file.BlockContainer.Item.FullName
-        label = $file.BlockContainer.Item.Name
-        children = [Collections.Generic.List[Object]]@()
+if (($PesterVersion.Major -eq 5 -and $PesterVersion.Minor -ge 2) -or
+    $PesterVersion.Major -gt 5
+) {
+    foreach ($file in $found) {
+        $fileSuite = [PSCustomObject]@{
+            type = 'suite'
+            id = $file.Item.FullName
+            file = $file.Item.FullName
+            label = $file.Item.Name
+            children = [Collections.Generic.List[Object]]@()
+        }
+        $testSuiteInfo.children.Add($fileSuite)
+
+        fold $fileSuite.children $file
     }
-    $testSuiteInfo.children.Add($fileSuite)
-    fold $fileSuite.children $file
+} else {
+    foreach ($file in $found) {
+        $fileSuite = [PSCustomObject]@{
+            type = 'suite'
+            id = $file.BlockContainer.Item.FullName
+            file = $file.BlockContainer.Item.FullName
+            label = $file.BlockContainer.Item.Name
+            children = [Collections.Generic.List[Object]]@()
+        }
+        $testSuiteInfo.children.Add($fileSuite)
+
+        fold $fileSuite.children $file
+    }
 }
 
 $testSuiteInfo | ConvertTo-Json -Depth 100
