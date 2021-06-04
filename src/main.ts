@@ -31,7 +31,7 @@ export async function getPesterStatus() {
 			if (pesterInfo.Version) {
 				[major, minor, patch] = pesterInfo.Version.split('.')
 
-				if (parseInt(major) == 5 && parseInt(minor) < 2) {
+				if ((parseInt(major) == 5 && parseInt(minor) < 2) || parseInt(major) < 5) {
 					vscode.window.showWarningMessage('Pester version 5.2.0+ is recommended and will be required in a future release of the Pester Test Explorer extension.')
 				}
 			}
