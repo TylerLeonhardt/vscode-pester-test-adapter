@@ -1,7 +1,10 @@
 import * as os from "os";
 
 export function getPesterVersion() {
-    return `(Get-InstalledModule Pester).Version`;
+    return `
+Import-Module Pester
+(Get-Module Pester).Version | ConvertTo-Json
+`;
 }
 
 export function getPesterDiscoveryScript(paths: string[]): string {
@@ -17,8 +20,7 @@ $DebugPreference = 'Ignore'
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 $PesterVersion = (Get-Module Pester).Version
 
-function Discover-Test
-{
+function Discover-Test {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -85,42 +87,9 @@ function fold ($children, $Block) {
     $hashset.Clear() | Out-Null
 }
 
-if (($PesterVersion.Major -eq 5 -and $PesterVersion.Minor -ge 2) -or
-    $PesterVersion.Major -gt 5
-) {
-    $PesterConfig = [PesterConfiguration]::Default
-    $PesterConfig.Run.PassThru = $true
-    $PesterConfig.Run.Path = $Path
-    $PesterConfig.Run.SkipRun = $true
-    
-    $found = (Invoke-Pester -Configuration $PesterConfig).Containers
-} else {
+function Get-PesterDiscoveries {
     $found = Discover-Test -Path $Path
-}
 
-$testSuiteInfo = [PSCustomObject]@{
-    type = 'suite'
-    id = 'root'
-    label = 'Pester'
-    children = [Collections.Generic.List[Object]]@()
-}
-
-if (($PesterVersion.Major -eq 5 -and $PesterVersion.Minor -ge 2) -or
-    $PesterVersion.Major -gt 5
-) {
-    foreach ($file in $found) {
-        $fileSuite = [PSCustomObject]@{
-            type = 'suite'
-            id = $file.Item.FullName
-            file = $file.Item.FullName
-            label = $file.Item.Name
-            children = [Collections.Generic.List[Object]]@()
-        }
-        $testSuiteInfo.children.Add($fileSuite)
-
-        fold $fileSuite.children $file
-    }
-} else {
     foreach ($file in $found) {
         $fileSuite = [PSCustomObject]@{
             type = 'suite'
@@ -133,6 +102,41 @@ if (($PesterVersion.Major -eq 5 -and $PesterVersion.Minor -ge 2) -or
 
         fold $fileSuite.children $file
     }
+}
+
+function Get-PesterDiscoveriesNew {
+    $PesterConfig = [PesterConfiguration]::Default
+    $PesterConfig.Run.PassThru = $true
+    $PesterConfig.Run.Path = $Path
+    $PesterConfig.Run.SkipRun = $true
+    
+    $found = (Invoke-Pester -Configuration $PesterConfig).Containers
+
+    foreach ($file in $found) {
+        $fileSuite = [PSCustomObject]@{
+            type = 'suite'
+            id = $file.Item.FullName
+            file = $file.Item.FullName
+            label = $file.Item.Name
+            children = [Collections.Generic.List[Object]]@()
+        }
+        $testSuiteInfo.children.Add($fileSuite)
+    
+        fold $fileSuite.children $file
+    }
+}
+
+$testSuiteInfo = [PSCustomObject]@{
+    type = 'suite'
+    id = 'root'
+    label = 'Pester'
+    children = [Collections.Generic.List[Object]]@()
+}
+
+if ($PesterVersion -ge '5.2.0') {
+    Get-PesterDiscoveriesNew
+} else {
+    Get-PesterDiscoveries
 }
 
 $testSuiteInfo | ConvertTo-Json -Depth 100
