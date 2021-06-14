@@ -87,7 +87,7 @@ function fold ($children, $Block) {
     $hashset.Clear() | Out-Null
 }
 
-function Get-PesterDiscoveries {
+function Get-FileSuiteOld {
     $found = Discover-Test -Path $Path
 
     foreach ($file in $found) {
@@ -104,7 +104,7 @@ function Get-PesterDiscoveries {
     }
 }
 
-function Get-PesterDiscoveriesNew {
+function Get-FileSuite {
     $PesterConfig = [PesterConfiguration]::Default
     $PesterConfig.Run.PassThru = $true
     $PesterConfig.Run.Path = $Path
@@ -134,9 +134,9 @@ $testSuiteInfo = [PSCustomObject]@{
 }
 
 if ($PesterVersion -ge '5.2.0') {
-    Get-PesterDiscoveriesNew
+    Get-FileSuite
 } else {
-    Get-PesterDiscoveries
+    Get-FileSuiteOld
 }
 
 $testSuiteInfo | ConvertTo-Json -Depth 100
