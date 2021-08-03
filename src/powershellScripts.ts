@@ -7,9 +7,14 @@ $Path = @(
     ${pathStr}
 )
 
-$VerbosePreference = 'Ignore'
-$WarningPreference = 'Ignore'
-$DebugPreference = 'Ignore'
+# defect-51 - Test Explorer does not show tests
+#   ignore invalid argument - changed to SilentlyContinue or Continue as appropriate
+#   https://github.com/craiglemon
+
+# $VerbosePreference = 'SilentlyContinue'
+# $WarningPreference = 'Continue'
+# $DebugPreference = 'SilentlyContinue'
+
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 function Discover-Test
 {
@@ -25,7 +30,13 @@ function Discover-Test
             $ExcludePath,
             $SessionState)
         
-        Reset-TestSuiteState
+        # defect-51 - Test Explorer does not show tests
+        #   Reset-TestSuiteState deprecated in pester 5.2 and above, so only call if available
+        #   https://github.com/craiglemon
+        if ( Get-Command Reset-TestSuiteState -ErrorAction SilentlyContinue ) { 
+            Reset-TestSuiteState    
+        }
+
         # to avoid Describe thinking that we run in interactive mode
         $invokedViaInvokePester = $true
         $files = Find-File -Path $Path -ExcludePath $ExcludePath -Extension $PesterPreference.Run.TestExtension.Value
@@ -94,16 +105,39 @@ $testSuiteInfo = [PSCustomObject]@{
     children = [Collections.Generic.List[Object]]@()
 }
 
-foreach ($file in $found) {
-    $fileSuite = [PSCustomObject]@{
-        type = 'suite'
-        id = $file.BlockContainer.Item.FullName
-        file = $file.BlockContainer.Item.FullName
-        label = $file.BlockContainer.Item.Name
-        children = [Collections.Generic.List[Object]]@()
+# defect-51 - Test Explorer does not show tests
+#   Version 5.2 of pester changed the definition of the Discover-Test return type.  Here we determine the latest installed version
+#       of pester and act appropriately - use BlockContaione ( < 5.2 ) or not ( >= 5.2 )
+#   https://github.com/craiglemon
+$version = ( @( Get-Module -Name "Pester" -ErrorAction "SilentlyContinue" )[0] ).Version
+
+if ( $version -lt [version] "5.2" ) {
+    # Latest installed pester version is less than 5.2
+    foreach ($file in $found) {
+        $fileSuite = [PSCustomObject]@{
+            type = 'suite'
+            id = $file.BlockContainer.Item.FullName
+            file = $file.BlockContainer.Item.FullName
+            label = $file.BlockContainer.Item.Name
+            children = [Collections.Generic.List[Object]]@()
+        }
+        $testSuiteInfo.children.Add($fileSuite)
+        fold $fileSuite.children $file
     }
-    $testSuiteInfo.children.Add($fileSuite)
-    fold $fileSuite.children $file
+}
+else {
+    # Latest installed pester version is 5.2 or above
+    foreach ($file in $found) {
+        $fileSuite = [PSCustomObject]@{
+            type = 'suite'
+            id = $file.Item.FullName
+            file = $file.Item.FullName
+            label = $file.Item.Name
+            children = [Collections.Generic.List[Object]]@()
+        }
+        $testSuiteInfo.children.Add($fileSuite)
+        fold $fileSuite.children $file
+    }
 }
 
 $testSuiteInfo | ConvertTo-Json -Depth 100
