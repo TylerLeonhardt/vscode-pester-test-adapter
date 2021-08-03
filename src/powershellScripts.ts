@@ -11,9 +11,9 @@ $Path = @(
 #   ignore invalid argument - changed to SilentlyContinue or Continue as appropriate
 #   https://github.com/craiglemon
 
-# $VerbosePreference = 'SilentlyContinue'
-# $WarningPreference = 'Continue'
-# $DebugPreference = 'SilentlyContinue'
+$VerbosePreference = 'SilentlyContinue'
+$WarningPreference = 'Continue'
+$DebugPreference = 'SilentlyContinue'
 
 Import-Module Pester -MinimumVersion 5.0.0 -ErrorAction Stop
 function Discover-Test
