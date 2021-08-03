@@ -84,7 +84,13 @@ export class PesterTestRunner {
 
 				let testSuiteInfo = null;
 				try {
-					const results = /{.+?"type": "suite",\s+"id": "root",\s+"label": "Pester",\s+"children".+}\s*$/si.exec(strData);
+
+					/*
+						defect-51 - Test Explorer does not show tests
+					    	JSON string contains multiple spaces between keyword and value - change regex expression to handle this
+					   		https://github.com/craiglemon
+					*/
+					const results = /{.+?"type":\s+"suite",\s+"id":\s+"root",\s+"label":\s+"Pester",\s+"children".+}\s*$/si.exec(strData);
 					if(!results || !results[0]) {
 						throw new Error('Regex does not match');
 					}
