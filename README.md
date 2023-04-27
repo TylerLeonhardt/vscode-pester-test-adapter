@@ -1,5 +1,7 @@
 # Pester Test Adapter for Visual Studio Code
 
+:warning: This extension is now deprecated in favor of the extension provided by the Pester team: https://github.com/pester/vscode-adapter :warning:
+
 ![logo](img/test-explorer-pester.png)
 
 This repository contains a [Pester](https://github.com/Pester/Pester) implementation of a `TestAdapter` extension that works with the
