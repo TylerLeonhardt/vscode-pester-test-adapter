@@ -5,6 +5,7 @@ import * as convert from 'xml-js';
 import { spawn } from 'child_process';
 import { TestSuiteInfo, TestInfo, TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { getPesterDiscoveryScript } from './powershellScripts';
+import { getPesterVersion } from './powershellScripts';
 import { PowerShellExtensionClient } from './powershellExtension';
 import { PesterTaskInvoker } from './pesterTaskInvoker';
 import { Log } from 'vscode-test-adapter-util';
@@ -52,6 +53,20 @@ export class PesterTestRunner {
 		this.log.debug(`Found ${files.length} paths`);
 	
 		const exePath = await this.getPowerShellExe();
+
+		const pesterVersionScript = getPesterVersion();
+		this.log.debug(pesterVersionScript);
+		const pesterVersion = spawn(exePath, [
+			'-NonInteractive',
+			'-NoLogo',
+			'-NoProfile',
+			'-Command', pesterVersionScript]);
+		pesterVersion.stdout.on('data', (data) => {
+			const version = data.toString().replace(/[\n\r]+/g, '');
+			if ( (parseInt(version.split('.')[0]) == 5 && parseInt(version.split('.')[1]) < 2) || parseInt(version.split('.')[0]) < 5) {
+				vscode.window.showWarningMessage("Pester v5.2.0+ will be required for future versions of Pester Test Explorer.", 'OK');
+			}
+		})
 
 		const script = getPesterDiscoveryScript(files.map(uri => uri.fsPath));
 		this.log.debug(script);
